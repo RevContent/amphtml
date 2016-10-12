@@ -21,6 +21,7 @@ limitations under the License.
 ```html
 <amp-ad width=320 height=420
         type="revcontent"
+        layout="responsive"
         data-wrapper="rcjsload_2ff711"
         data-endpoint="trends.revcontent.com"
         data-id="203">
