@@ -365,6 +365,7 @@ export const adConfig = {
       'https://cdn.revcontent.com',
       'https://img.revcontent.com',
     ],
+    renderStartImplemented: true,
   },
 
   rubicon: {},
