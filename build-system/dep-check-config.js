@@ -82,10 +82,12 @@ exports.rules = [
     mustNotDependOn: 'src/**/*.js',
     whitelist: [
       'ads/**->src/utils/base64.js',
+      'ads/**->src/utils/dom-fingerprint.js',
       'ads/**->src/log.js',
       'ads/**->src/mode.js',
       'ads/**->src/url.js',
       'ads/**->src/types.js',
+      'ads/**->src/string.js',
       'ads/**->src/style.js',
       // ads/google/a4a doesn't contain 3P ad code and should probably move
       // somewhere else at some point
@@ -130,6 +132,12 @@ exports.rules = [
   {
     filesMatching: 'extensions/**/*.js',
     mustNotDependOn: 'src/service/**/*.js',
+    whitelist: [
+      'extensions/amp-a4a/0.1/a4a-variable-source.js->' +
+          'src/service/variable-source.js',
+      'extensions/amp-a4a/0.1/amp-a4a.js->' +
+          'src/service/url-replacements-impl.js',
+    ],
   },
   {
     filesMatching: 'extensions/**/*.js',

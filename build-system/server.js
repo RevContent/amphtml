@@ -165,7 +165,7 @@ app.use('/form/echo-json/post', function(req, res) {
   assertCors(req, res, ['POST']);
   var form = new formidable.IncomingForm();
   form.parse(req, function(err, fields) {
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     if (fields['email'] == 'already@subscribed.com') {
       res.statusCode = 500;
     }
@@ -492,6 +492,16 @@ app.get(['/examples/*', '/test/manual/*'], function(req, res, next) {
   });
 });
 
+// "fake" a4a creative.
+app.get('/extensions/amp-ad-network-fake-impl/0.1/data/fake_amp.json.html', function(req, res) {
+  var filePath = '/extensions/amp-ad-network-fake-impl/0.1/data/fake_amp.json';
+  fs.readFileAsync(process.cwd() + filePath).then(file => {
+    const metadata = JSON.parse(file);
+    res.setHeader('Content-Type', 'text/html');
+    res.end(metadata.creative);
+  });
+});
+
 /**
  * @param {string} mode
  * @param {string} file
@@ -501,14 +511,14 @@ function replaceUrls(mode, file) {
     file = file.replace('https://cdn.ampproject.org/viewer/google/v5.js', 'https://cdn1.ampproject.org/viewer/google/v5.js');
     file = file.replace(/(https:\/\/cdn.ampproject.org\/.+?).js/g, '$1.max.js');
     file = file.replace('https://cdn.ampproject.org/v0.max.js', '/dist/amp.js');
-    file = file.replace('https://cdn.ampproject.org/a4a-v0.max.js', '/dist/amp-inabox.js');
+    file = file.replace('https://cdn.ampproject.org/amp4ads-v0.max.js', '/dist/amp-inabox.js');
     file = file.replace(/https:\/\/cdn.ampproject.org\/v0\//g, '/dist/v0/');
     file = file.replace('https://cdn1.ampproject.org/viewer/google/v5.js', 'https://cdn.ampproject.org/viewer/google/v5.js');
   }
   if (mode == 'min') {
     file = file.replace(/\.max\.js/g, '.js');
     file = file.replace('/dist/amp.js', '/dist/v0.js');
-    file = file.replace('/dist/amp-inabox.js', '/dist/a4a-v0.js');
+    file = file.replace('/dist/amp-inabox.js', '/dist/amp4ads-v0.js');
   }
   return file;
 }

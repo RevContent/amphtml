@@ -37,6 +37,7 @@ import {utf8Decode} from '../../../src/utils/bytes';
 import {viewerForDoc} from '../../../src/viewer';
 import {xhrFor} from '../../../src/xhr';
 import {endsWith} from '../../../src/string';
+import {platformFor} from '../../../src/platform';
 import {
   importPublicKey,
   isCryptoAvailable,
@@ -47,6 +48,9 @@ import {isExperimentOn} from '../../../src/experiments';
 import {setStyle} from '../../../src/style';
 import {handleClick} from '../../../ads/alp/handler';
 import {AdDisplayState} from '../../../extensions/amp-ad/0.1/amp-ad-ui';
+import {installUrlReplacementsForEmbed,}
+    from '../../../src/service/url-replacements-impl';
+import {A4AVariableSource} from './a4a-variable-source';
 
 /** @private @const {string} */
 const ORIGINAL_HREF_ATTRIBUTE = 'data-a4a-orig-href';
@@ -168,8 +172,13 @@ export class AmpA4A extends AMP.BaseElement {
     // from cache' issue.  See https://github.com/ampproject/amphtml/issues/5614
     /** @private {?ArrayBuffer} */
     this.creativeBody_ = null;
-    /** @private {?string} */
-    this.experimentalNonAmpCreativeRenderMethod_ = null;
+    /**
+     * Note(keithwrightbos) - ensure the default here is null so that ios
+     * uses safeframe when response header is not specified.
+     * @private {?string}
+     */
+    this.experimentalNonAmpCreativeRenderMethod_ =
+      platformFor(this.win).isIos() ? 'safeframe' : null;
 
     this.emitLifecycleEvent('adSlotBuilt');
   }
@@ -339,7 +348,8 @@ export class AmpA4A extends AMP.BaseElement {
           // iframe src from cache' issue.  See
           // https://github.com/ampproject/amphtml/issues/5614
           this.experimentalNonAmpCreativeRenderMethod_ =
-              fetchResponse.headers.get(RENDERING_TYPE_HEADER);
+              fetchResponse.headers.get(RENDERING_TYPE_HEADER) ||
+              this.experimentalNonAmpCreativeRenderMethod_;
           // Note: Resolving a .then inside a .then because we need to capture
           // two fields of fetchResponse, one of which is, itself, a promise,
           // and one of which isn't.  If we just return
@@ -519,7 +529,6 @@ export class AmpA4A extends AMP.BaseElement {
             this.creativeBody_) {
           const renderPromise = this.renderViaSafeFrame_(this.creativeBody_);
           this.creativeBody_ = null;  // Free resources.
-          this.experimentalNonAmpCreativeRenderMethod_ = null;
           return renderPromise;
         } else if (this.adUrl_) {
           return this.renderViaCachedContentIframe_(this.adUrl_);
@@ -552,7 +561,8 @@ export class AmpA4A extends AMP.BaseElement {
       this.adPromise_ = null;
       this.adUrl_ = null;
       this.creativeBody_ = null;
-      this.experimentalNonAmpCreativeRenderMethod_ = null;
+      this.experimentalNonAmpCreativeRenderMethod_ =
+          platformFor(this.win).isIos() ? 'safeframe' : null;
       this.rendered_ = false;
       if (this.xOriginIframeHandler_) {
         this.xOriginIframeHandler_.freeXOriginIframe();
@@ -748,10 +758,9 @@ export class AmpA4A extends AMP.BaseElement {
               html: creativeMetaData.minifiedCreative,
               extensionIds: creativeMetaData.customElementExtensions || [],
               fonts: fontsArray,
-            }, unusedEmbedWin => {
-              // TODO(avimehta): Install `url-replace` override and other
-              // services using `installServiceInEmbedScope(embedWin, id, ...)`.
-              // See `url-replacements.js` `installUrlReplacementsForEmbed`.
+            }, embedWin => {
+              installUrlReplacementsForEmbed(this.getAmpDoc(), embedWin,
+                new A4AVariableSource(this.getAmpDoc(), embedWin));
             }).then(friendlyIframeEmbed => {
               // Ensure visibility hidden has been removed (set by boilerplate).
               const frameDoc = friendlyIframeEmbed.iframe.contentDocument ||
